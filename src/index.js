@@ -188,6 +188,9 @@ async function search(params) {
   await again()
 }
 
+// this function looks for the username and password box, types in genes 
+// username and password and hits the submit button
+// theres seems to be two variants of the page, txtUserName_1 and txtUserName_3
 async function submit_login(params) {
   try {
     await page.waitForSelector("#txtUserName_1", { timeout: 5000 })
@@ -219,34 +222,48 @@ async function submit_login(params) {
   await page.waitForNavigation({waitUntil:'networkidle2'})
 }
 
+// keep track of these two days, 19th and 20th
+// initially set to unavailable
 var states = {
   '20':false,
   '19':false
 }
 
+// this function calls itself repeatedly every 15 seconds
 async function again(){
 
   try {
+    // if we got signed out and redirected to the login page,
+    // run the sign in function instead
     if(page.url().includes('account/login.aspx')){
       await submit_login();
     }
     // await page.reload({waitUntil:'networkidle2'})
+
+    // select "6" for heavenly, and hit "check availability"
     await page.select("#PassHolderReservationComponent_Resort_Selection",'6')
     
     await page.click("#passHolderReservationsSearchButton")
     await sleep(2000)
     // await page.waitForNavigation({waitUntil:'networkidle2'})
   
+    // select "8" for northstar, and hit "check availability"
     await page.select("#PassHolderReservationComponent_Resort_Selection",'8')
     
     await page.click("#passHolderReservationsSearchButton")
     await sleep(2000)
     // await page.waitForNavigation({waitUntil:'networkidle2'})
   
+    // use the css selector to extract the calender dates
     let days = await page.$$(".passholder_reservations__calendar__day")
     // console.log(days);
   
     // let searchDay = '20';
+
+    // for each day, check if the table cell has the css class "--disabled"
+    // and check against the last known state of the dates availablity
+    // and if the state has changed, notify the discord channel
+    
     for (const day of days) {
       // console.log(await day.getProperty("innerText"));
       const text = await page.evaluateHandle(element => element.innerText, day);
